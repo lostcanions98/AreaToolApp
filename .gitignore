@@ -1,15 +1,7 @@
 node_modules/
+ios/App/build/
+ios/App/DerivedData/
+ios/App/App.xcworkspace/xcuserdata/
 .DS_Store
-
-# macOS
-*.DS_Store
-
-# Xcode
-DerivedData/
-xcuserdata/
-
-# npm
-npm-debug.log*
-
-# GitHub
-.github/*.tmp
+dist/
+build/
