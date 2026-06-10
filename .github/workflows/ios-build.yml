@@ -1,7 +1,8 @@
-name: Build IPA
+name: iOS Build
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   build-ios:
@@ -11,7 +12,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -23,31 +24,12 @@ jobs:
         run: npx cap sync ios
 
       - name: Install CocoaPods
-        run: |
-          sudo gem install cocoapods
-          cd ios/App/App
-          pod install
+        run: sudo gem install cocoapods
 
-      - name: Build Xcode Archive
-        run: |
-          cd ios/App/App
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath build/App.xcarchive \
-            archive
+      - name: Install Pods
+        working-directory: ios/App
+        run: pod install
 
-      - name: Export IPA
-        run: |
-          cd ios/App/App
-          xcodebuild -exportArchive \
-            -archivePath build/App.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist exportOptions.plist
-
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AreaTool-IPA
-          path: ios/App/App/build/ipa
+      - name: Build iOS (Xcode)
+        working-directory: ios/App
+        run: xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos build
