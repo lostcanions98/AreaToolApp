@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Area Tool">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Area Tool</title>
+    <style>
+        /* Essential client-side routing visibility control */
+        .page-view { display: none; }
+        .page-view.active-view { display: block; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-4">
+
+        <div id="view-home" class="page-view active-view">
+            <h4 class="mb-3 text-center">Area Tool Home</h4>
+            <div class="d-grid gap-3">
+                <a href="#" onclick="switchView('converter')" class="btn btn-primary btn-lg">Area Converter</a>
+                <a href="#" onclick="switchView('calculator')" class="btn btn-secondary btn-lg">Area Calculator</a>
+            </div>
+        </div>
+
+        <div id="view-converter" class="page-view">
+            <div class="mb-3"><a href="#" onclick="switchView('home')" class="btn btn-sm btn-outline-secondary">Back</a></div>
+            <h4 class="mb-3 text-center">Area Converter</h4>
+            <div class="card p-4 shadow-sm">
+                <select id="shape" class="form-select mb-3" onchange="toggleInputs()">
+                    <option value="square">Square / Rectangle</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="irregular">Irregular Quad</option>
+                </select>
+         
+                <div class="row g-3" id="inputs"></div>
+                <hr>
+                <div class="row g-3">
+                    <div class="col-12"><label class="form-label">Square Foot</label><input type="number" step="any" id="sqft" class="form-control" oninput="calc('sqft')"></div>
+                    <div class="col-12"><label class="form-label">Marla</label><input type="number" step="any" id="marla" class="form-control" oninput="calc('marla')"></div>
+                    <div class="col-12"><label class="form-label">Kanal</label><input type="number" step="any" id="kanal" class="form-control" oninput="calc('kanal')"></div>
+                    <div class="col-12"><label class="form-label">Killa</label><input type="number" step="any" id="killa" class="form-control" oninput="calc('killa')"></div>
+                    <div class="col-12"><label class="form-label">Acre</label><input type="number" step="any" id="acre" class="form-control" oninput="calc('acre')"></div>
+                    <div class="col-12"><label class="form-label">Muraba</label><input type="number" step="any" id="muraba" class="form-control" oninput="calc('muraba')"></div>
+                    <div class="col-12"><label class="form-label">Area</label><input type="text" id="area" class="form-control" oninput="calc('area')" placeholder="e.g. 1 Muraba 5 Kanal"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-calculator" class="page-view">
+            <div class="mb-3"><a href="#" onclick="switchView('home')" class="btn btn-sm btn-outline-secondary">Back</a></div>
+            <h4 class="mb-3 text-center">Area Calculator</h4>
+            <div id="calc-container">
+                <div class="mb-3" id="field-1-wrap"><label>Area 1</label><input type="text" id="area1" class="form-control" oninput="calculateTotal()"></div>
+                <div id="controls" class="mb-3">
+                    <button onclick="addOp('+')" class="btn btn-sm btn-outline-primary">+</button>
+                    <button onclick="addOp('-')" class="btn btn-sm btn-outline-primary">-</button>
+                    <button onclick="addOp('x')" class="btn btn-sm btn-outline-primary">x</button>
+                    <button onclick="addOp('÷')" class="btn btn-sm btn-outline-primary">÷</button>
+                    <button onclick="cancelLast()" class="btn btn-sm btn-outline-warning ms-2">Cancel</button>
+                    <button onclick="clearAll()" class="btn btn-sm btn-outline-danger ms-5">Clear All</button>
+                </div>
+                <div class="mt-4"><label>Total Area</label><input type="text" id="totalArea" class="form-control" readonly></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Navigation Logic ---
+        function switchView(viewId) {
+            document.querySelectorAll('.page-view').forEach(view => {
+                view.classList.remove('active-view');
+            });
+            document.getElementById('view-' + viewId).classList.add('active-view');
+        }
+
+        // --- Converter Logic ---
+        const factors = { sqft: 1, marla: 272, kanal: 5440, killa: 48960, acre: 43520, muraba: 1088000 };
+        const unitMapConverter = { 
+            'sq':1, 'sqft':1, 'sf':1, 's':1, 'square':1, 'foot':1, 'squarefoot':1,
+            'm':272, 'ma':272, 'mar':272, 'marl':272, 'marla':272,
+            'k':5440, 'ka':5440, 'kan':5440, 'kl':5440, 'kana':5440, 'kanal':5440,
+            'a':43520, 'ac':43520, 'acr':43520, 'acre':43520,
+            'mm':1088000, 'mb':1088000, 'mu':1088000, 'mur':1088000, 'mura':1088000, 'murab':1088000, 'muraba':1088000 
+        };
+    
+        function parseInput(str) {
+            let total = 0;
+            const regex = /(\d+(?:\.\d+)?)\s*([a-zA-Z]+)/gi;
+            let match;
+            while ((match = regex.exec(str)) !== null) {
+                let unit = match[2].toLowerCase();
+                if(unitMapConverter[unit]) total += parseFloat(match[1]) * unitMapConverter[unit];
+            }
+            return total;
+        }
+        function toggleInputs() {
+            const shape = document.getElementById('shape').value;
+            let html = '';
+            const counts = { square: 2, triangle: 2, irregular: 4 };
+            for(let i=1; i<=counts[shape]; i++) {
+                html += `<div class='col-6'><label>Side ${i} (ft+in)</label><div class='input-group'><input type='number' step='any' id='s${i}_ft' class='form-control' placeholder='ft' oninput='calcDim()'><input type='number' step='any' id='s${i}_in' class='form-control' placeholder='in' oninput='calcDim()'></div></div>`;
+            }
+            document.getElementById('inputs').innerHTML = html;
+        }
+        function getSide(i) { return (parseFloat(document.getElementById('s'+i+'_ft').value)||0) + ((parseFloat(document.getElementById('s'+i+'_in').value)||0)/12); }
+        function calcDim() {
+            const shape = document.getElementById('shape').value;
+            let area = (shape==='square') ? getSide(1)*getSide(2) : (shape==='triangle' ? 0.5*getSide(1)*getSide(2) : ((getSide(1)+getSide(3))/2)*((getSide(2)+getSide(4))/2));
+            updateAll(area, 'dim');
+        }
+        function calc(source) {
+            let totalSqft = (source === 'area') ? parseInput(document.getElementById('area').value) : (parseFloat(document.getElementById(source).value) || 0) * factors[source];
+            updateAll(totalSqft, source);
+        }
+        function updateAll(sqft, exclude) {
+            if(exclude !== 'sqft') document.getElementById('sqft').value = sqft.toFixed(2);
+            if(exclude !== 'marla') document.getElementById('marla').value = (sqft/272).toFixed(4);
+            if(exclude !== 'kanal') document.getElementById('kanal').value = (sqft/5440).toFixed(4);
+            if(exclude !== 'killa') document.getElementById('killa').value = (sqft/48960).toFixed(4);
+            if(exclude !== 'acre') document.getElementById('acre').value = (sqft/43520).toFixed(5);
+            if(exclude !== 'muraba') document.getElementById('muraba').value = (sqft/1088000).toFixed(6);
+            if(exclude !== 'area') {
+                let s = Math.round(sqft);
+                let m = Math.floor(s/272); s %= 272;
+                let k = Math.floor(m/20); m %= 20;
+                let a = Math.floor(k/8); k %= 8;
+                let mur = Math.floor(a/25); a %= 25;
+                let res = [];
+                if(mur) res.push(mur + " Muraba");
+                if(a) res.push(a + " Acre"); if(k) res.push(k + " Kanal"); if(m) res.push(m + " Marla");
+                if(s) res.push(s + " Square Foot");
+                document.getElementById('area').value = res.join(" ");
+            }
+        }
+        toggleInputs();
+
+        // --- Calculator Logic (Isolated Scoping Applied) ---
+        const unitMapCalc = { 'sq':1, 'sqft':1, 'sf':1, 's':1, 'square':1, 'foot':1, 'squarefoot':1, 'm':272, 'ma':272, 'mar':272, 'marl':272, 'marla':272, 'k':5440, 'ka':5440, 'kan':5440, 'kl':5440, 'kana':5440, 'kanal':5440, 'a':43520, 'ac':43520, 'acr':43520, 'acre':43520, 'mm':1088000, 'mb':1088000, 'mu':1088000, 'mur':1088000, 'mura':1088000, 'murab':1088000, 'muraba':1088000 };
+        function parseArea(str) {
+            let total = 0;
+            const regex = /(\d+(?:\.\d+)?)\s*([a-zA-Z]+)/gi;
+            let match;
+            while ((match = regex.exec(str)) !== null) {
+                let unit = match[2].toLowerCase();
+                if(unitMapCalc[unit]) total += parseFloat(match[1]) * unitMapCalc[unit];
+            }
+            return total;
+        }
+        function formatSqft(sqft) {
+            let s = Math.round(sqft);
+            let m = Math.floor(s/272); s %= 272;
+            let k = Math.floor(m/20); m %= 20;
+            let a = Math.floor(k/8); k %= 8;
+            let mur = Math.floor(a/25); a %= 25;
+            let res = [];
+            if(mur) res.push(mur + " Muraba");
+            if(a) res.push(a + " Acre"); if(k) res.push(k + " Kanal"); if(m) res.push(m + " Marla");
+            if(s) res.push(s + " Square Foot");
+            return res.join(" ");
+        }
+        let fieldOps = [];
+        function addOp(op) {
+            let inputs = document.querySelectorAll('#calc-container input[id^="area"]');
+            if (!inputs[inputs.length - 1].value.trim()) return;
+            fieldOps.push(op);
+            let nextIdx = inputs.length + 1;
+            let div = document.createElement('div');
+            div.className = "mb-3";
+            div.id = 'field-'+nextIdx+'-wrap';
+            div.innerHTML = `<label>Area ${nextIdx} (${op})</label><input type="text" id="area${nextIdx}" class="form-control" oninput="calculateTotal()">`;
+            document.getElementById('calc-container').insertBefore(div, document.getElementById('controls'));
+            calculateTotal();
+        }
+        function calculateTotal() {
+            let inputs = document.querySelectorAll('#calc-container input[id^="area"]');
+            let total = parseArea(inputs[0].value);
+            for(let i = 0; i < fieldOps.length; i++) {
+                let op = fieldOps[i];
+                let val;
+                if(op === 'x' || op === '÷') {
+                    val = parseFloat(inputs[i+1].value) || 0;
+                } else {
+                    val = parseArea(inputs[i+1].value);
+                }
+                if(op === '+') total += val;
+                else if(op === '-') total -= val;
+                else if(op === 'x') total *= val;
+                else if(op === '÷' && val !== 0) total /= val;
+            }
+            document.getElementById('totalArea').value = formatSqft(total);
+        }
+        function cancelLast() {
+            if (fieldOps.length === 0) return;
+            fieldOps.pop();
+            let inputs = document.querySelectorAll('#calc-container input[id^="area"]');
+            inputs[inputs.length - 1].parentElement.remove();
+            calculateTotal();
+        }
+        function clearAll() {
+            document.getElementById('area1').value = '';
+            fieldOps = [];
+            let extra = document.querySelectorAll('div[id^="field-"]');
+            for(let i = 1; i < extra.length; i++) extra[i].remove();
+            document.getElementById('totalArea').value = '';
+        }
+    </script>
+</body>
+</html>
