@@ -11,7 +11,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -25,28 +25,29 @@ jobs:
       - name: Install CocoaPods
         run: |
           sudo gem install cocoapods
-          cd ios/App
+          cd ios/App/App
           pod install
 
-      - name: Build Archive
+      - name: Build Xcode Archive
         run: |
-          cd ios/App
+          cd ios/App/App
           xcodebuild -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
-            -archivePath build/App.xcarchive archive
+            -archivePath build/App.xcarchive \
+            archive
 
       - name: Export IPA
         run: |
-          cd ios/App
+          cd ios/App/App
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
             -exportPath build/ipa \
             -exportOptionsPlist exportOptions.plist
 
-      - name: Upload IPA
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: AreaTool-IPA
-          path: ios/App/build/ipa
+          path: ios/App/App/build/ipa
