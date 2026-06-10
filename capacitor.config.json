@@ -1,5 +1,6 @@
 {
   "appId": "com.bhalli.areatool",
   "appName": "Area Tool",
-  "webDir": "www"
+  "webDir": "www",
+  "bundledWebRuntime": false
 }
