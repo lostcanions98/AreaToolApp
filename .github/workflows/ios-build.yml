@@ -24,7 +24,14 @@ jobs:
         run: npx cap sync ios
 
       - name: Install CocoaPods
+<<<<<<< HEAD
         run: sudo gem install cocoapods
+=======
+        run: |
+          sudo gem install cocoapods
+          cd ios/App/App
+          pod install
+>>>>>>> 60c4877 (Fix iOS Podfile path for GitHub Actions)
 
       - name: Install Pods
         working-directory: ios/App
