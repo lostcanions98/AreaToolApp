@@ -2,41 +2,40 @@ name: iOS Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build-ios:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: Sync Capacitor
+      - name: Sync Capacitor iOS
         run: npx cap sync ios
 
-      - name: Install CocoaPods
-<<<<<<< HEAD
-        run: sudo gem install cocoapods
-=======
+      - name: Show iOS Structure
         run: |
-          sudo gem install cocoapods
-          cd ios/App/App
-          pod install
->>>>>>> 60c4877 (Fix iOS Podfile path for GitHub Actions)
+          pwd
+          ls -la ios
+          ls -la ios/App
 
-      - name: Install Pods
+      - name: Build App
         working-directory: ios/App
-        run: pod install
-
-      - name: Build iOS (Xcode)
-        working-directory: ios/App
-        run: xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos build
+        run: |
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination generic/platform=iOS \
+            build
